@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [auth, setAuth] = useState<AuthResponse | null>(null);
+  const [showPw, setShowPw] = useState(false);
   const router = useRouter();
 
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -67,12 +68,22 @@ export default function LoginPage() {
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-wide text-mute mb-2">Password</label>
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={update("password")}
-                  className="w-full border border-line bg-white rounded-sm px-4 py-3 text-char outline-none focus:border-gold"
-                />
+                <div className="relative">
+                  <input
+                    type={showPw ? "text" : "password"}
+                    value={form.password}
+                    onChange={update("password")}
+                    className="w-full border border-line bg-white rounded-sm px-4 py-3 text-char outline-none focus:border-gold pr-11"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowPw((s) => !s)}
+                    className="absolute inset-y-0 right-3 flex items-center text-mute hover:text-char"
+                  >
+                    {showPw ? <EyeOff /> : <Eye />}
+                  </button>
+                </div>
               </div>
 
               {error && <p className="text-sm text-red-700">{error.message}</p>}
@@ -94,5 +105,26 @@ export default function LoginPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function Eye() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
+function EyeOff() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
   );
 }

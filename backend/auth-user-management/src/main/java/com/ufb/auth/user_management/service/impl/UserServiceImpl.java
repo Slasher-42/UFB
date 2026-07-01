@@ -4,6 +4,7 @@ import com.ufb.auth.user_management.dto.AuthResponse;
 import com.ufb.auth.user_management.dto.LoginRequest;
 import com.ufb.auth.user_management.dto.RegisterRequest;
 import com.ufb.auth.user_management.dto.UserResponse;
+import com.ufb.auth.user_management.exception.AccountDisabledException;
 import com.ufb.auth.user_management.exception.EmailAlreadyExistsException;
 import com.ufb.auth.user_management.exception.InvalidCredentialsException;
 import com.ufb.auth.user_management.dto.ClaimAccountRequest;
@@ -65,7 +66,11 @@ public class UserServiceImpl implements UserService {
             throw new InvalidCredentialsException();
         }
 
-        if (!user.isEnabled() || !passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (!user.isEnabled()) {
+            throw new AccountDisabledException();
+        }
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new InvalidCredentialsException();
         }
 

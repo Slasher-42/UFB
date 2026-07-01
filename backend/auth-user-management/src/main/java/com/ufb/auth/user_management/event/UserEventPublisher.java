@@ -1,5 +1,8 @@
 package com.ufb.auth.user_management.event;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufb.auth.user_management.model.User;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -15,8 +18,9 @@ import java.time.Instant;
 public class UserEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(UserEventPublisher.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Value("${ufb.kafka.topic.user-registered}")
     private String userRegisteredTopic;
@@ -50,8 +54,11 @@ public class UserEventPublisher {
                 Instant.now()
         );
         try {
-            kafkaTemplate.send(topic, user.getEmail(), event);
+            String payload = MAPPER.writeValueAsString(event);
+            kafkaTemplate.send(topic, user.getEmail(), payload);
             log.info("Published {} for userId={}", eventType, user.getId());
+        } catch (JsonProcessingException ex) {
+            log.error("Failed to serialize {} for userId={}: {}", eventType, user.getId(), ex.getMessage());
         } catch (Exception ex) {
             log.error("Failed to publish {} for userId={}: {}", eventType, user.getId(), ex.getMessage());
         }
