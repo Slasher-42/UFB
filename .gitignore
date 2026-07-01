@@ -1,5 +1,7 @@
 # --- Secrets / local config ---
 **/application.properties
+secrets/
+**/secrets/
 
 # --- Java / Maven build output ---
 **/target/
