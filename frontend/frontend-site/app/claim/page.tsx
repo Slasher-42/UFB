@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { claimAccount, type ApiError } from "@/lib/api";
+import { claimAccount, currentUser, isLoggedIn, type ApiError } from "@/lib/api";
 
 export default function ClaimPage() {
   const router = useRouter();
@@ -13,6 +13,16 @@ export default function ClaimPage() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      const user = currentUser();
+      router.replace(user?.role === "ADMIN" ? "/admin" : "/portal");
+      return;
+    }
+    setChecking(false);
+  }, [router]);
 
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [k]: e.target.value });
@@ -44,6 +54,17 @@ export default function ClaimPage() {
       setLoading(false);
     }
   };
+
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-ivory">
+        <div className="text-center">
+          <span className="font-display text-2xl text-gold tracking-wide">UFB</span>
+          <p className="text-mute text-sm mt-3">Checking access…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen grid lg:grid-cols-2">

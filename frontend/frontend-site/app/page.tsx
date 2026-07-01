@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { currentUser, logout, type UserResponse } from "@/lib/api";
 import "./home.css";
 
 type Post = {
@@ -52,11 +54,25 @@ const POSTS: Post[] = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [slide, setSlide] = useState(0);
   const [openPost, setOpenPost] = useState<Post | null>(null);
+  const [user, setUser] = useState<UserResponse | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setUser(currentUser());
+  }, []);
+
+  const dashboardHref = user?.role === "ADMIN" ? "/admin" : "/portal";
+
+  const signOut = () => {
+    logout();
+    setUser(null);
+    router.refresh();
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -143,7 +159,20 @@ export default function Home() {
             <a href="#insights">Insights</a>
             <a href="#contact">Contact</a>
           </nav>
-          <a href="#contact" className="cta">Work With Us</a>
+          <div className="auth-nav">
+            {user ? (
+              <>
+                <span className="auth-hello">Hi, {user.fullName.split(" ")[0]}</span>
+                <a href={dashboardHref} className="cta">Dashboard</a>
+                <button type="button" className="auth-link" onClick={signOut}>Sign out</button>
+              </>
+            ) : (
+              <>
+                <a href="/login" className="auth-link">Sign in</a>
+                <a href="/register" className="cta">Sign Up</a>
+              </>
+            )}
+          </div>
           <div
             className={"burger" + (menuOpen ? " open" : "")}
             aria-label="Menu"
@@ -163,6 +192,17 @@ export default function Home() {
         <a href="#insights" onClick={closeMenu}>Insights</a>
         <a href="#contact" onClick={closeMenu}>Contact</a>
         <a href="#contact" className="cta" onClick={closeMenu}>Work With Us</a>
+        {user ? (
+          <>
+            <a href={dashboardHref} onClick={closeMenu}>Dashboard</a>
+            <a href="#top" onClick={() => { signOut(); closeMenu(); }}>Sign out</a>
+          </>
+        ) : (
+          <>
+            <a href="/login" onClick={closeMenu}>Sign in</a>
+            <a href="/register" className="cta" onClick={closeMenu}>Sign Up</a>
+          </>
+        )}
       </div>
 
       <section className="hero" id="top">

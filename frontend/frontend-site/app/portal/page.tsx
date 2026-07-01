@@ -22,8 +22,9 @@ function PortalContent() {
     <main className="min-h-screen bg-ivory">
       <header className="bg-navy text-white">
         <div className="max-w-6xl mx-auto px-8 py-5 flex items-center justify-between">
-          <span className="font-display text-2xl text-gold tracking-wide">UFB</span>
+          <a href="/" className="font-display text-2xl text-gold tracking-wide">UFB</a>
           <div className="flex items-center gap-6">
+            <a href="/" className="text-sm text-[#c7d0de] hover:text-gold">Home</a>
             <span className="text-sm text-[#c7d0de] hidden sm:inline">
               {user?.fullName}
             </span>

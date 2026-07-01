@@ -25,6 +25,10 @@ header.scrolled{background:rgba(3,18,46,.96);padding:14px 0;box-shadow:0 6px 30p
 .nav nav a:hover::after{width:100%}
 .nav .cta{background:var(--gold);color:var(--navy);padding:11px 22px;border-radius:2px;font-weight:600;font-size:13px;letter-spacing:.5px;transition:.3s}
 .nav .cta:hover{background:#fff;transform:translateY(-2px)}
+.auth-nav{display:flex;align-items:center;gap:18px}
+.auth-hello{color:#c7d0de;font-size:13px}
+.auth-link{color:#fff;font-size:13px;font-weight:500;letter-spacing:.5px;background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0}
+.auth-link:hover{color:var(--gold)}
 .burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;z-index:95}
 .burger span{width:26px;height:2px;background:#fff;transition:.3s}
 .burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
@@ -163,7 +167,7 @@ footer .fcol a:hover{color:var(--gold)}
 .js .reveal{opacity:0;transform:translateY(34px);transition:.8s cubic-bezier(.2,.7,.3,1)}
 .reveal.in{opacity:1;transform:none}
 @media(max-width:880px){
-  .nav nav,.nav .cta{display:none}
+  .nav nav,.nav .cta,.nav .auth-nav{display:none}
   .burger{display:flex}
   .about-grid,.cards,.steps,.fgrid,.posts,.stats-grid,.contact-grid{grid-template-columns:1fr}
   .stats-grid{gap:40px}
