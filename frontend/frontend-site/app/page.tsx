@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { currentUser, logout, type UserResponse } from "@/lib/api";
+import { claimStatus, currentUser, logout, type UserResponse } from "@/lib/api";
 import "./home.css";
 
 type Post = {
@@ -60,10 +60,14 @@ export default function Home() {
   const [slide, setSlide] = useState(0);
   const [openPost, setOpenPost] = useState<Post | null>(null);
   const [user, setUser] = useState<UserResponse | null>(null);
+  const [needsClaim, setNeedsClaim] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setUser(currentUser());
+    claimStatus()
+      .then((s) => setNeedsClaim(s.needsClaim))
+      .catch(() => setNeedsClaim(false));
   }, []);
 
   const dashboardHref = user?.role === "ADMIN" ? "/admin" : "/portal";
@@ -226,6 +230,9 @@ export default function Home() {
           <div className="btns">
             <a href="#contact" className="btn-g">Start a Conversation</a>
             <a href="#services" className="btn-o">Explore Services</a>
+            {needsClaim && (
+              <a href="/claim" className="btn-o">Claim Admin Account</a>
+            )}
           </div>
         </div>
         <div className="tagstrip">

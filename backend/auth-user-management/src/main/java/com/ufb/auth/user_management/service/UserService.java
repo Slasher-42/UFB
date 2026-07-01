@@ -13,6 +13,7 @@ public interface UserService {
     AuthResponse login(LoginRequest request);
     AuthResponse refresh(String refreshToken);
     AuthResponse claim(ClaimAccountRequest request);
+    boolean bootstrapAdminNeedsClaim();
     List<UserResponse> listUsers();
     UserResponse setEnabled(Long userId, boolean enabled);
     void deleteUser(Long userId);

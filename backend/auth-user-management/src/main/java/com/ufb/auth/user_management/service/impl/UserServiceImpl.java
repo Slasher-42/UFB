@@ -24,6 +24,7 @@ import com.ufb.auth.user_management.event.UserEventPublisher;
 import com.ufb.auth.user_management.security.JwtService;
 import com.ufb.auth.user_management.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,9 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserEventPublisher eventPublisher;
+
+    @Value("${ufb.admin.email}")
+    private String bootstrapAdminEmail;
 
     @Override
     @Transactional
@@ -145,6 +149,14 @@ public class UserServiceImpl implements UserService {
                 jwtService.generateRefreshToken(saved),
                 toResponse(saved)
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean bootstrapAdminNeedsClaim() {
+        return userRepository.findByEmail(bootstrapAdminEmail)
+                .map(u -> !u.isPasswordSet())
+                .orElse(false);
     }
 
     @Override

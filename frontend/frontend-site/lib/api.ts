@@ -19,6 +19,7 @@ export type AuthResponse = {
 };
 
 export type ApiError = { status: number; message: string; fields?: Record<string, string> };
+export type ClaimStatusResponse = { needsClaim: boolean };
 
 const ACCESS_KEY = "ufb_access";
 const REFRESH_KEY = "ufb_refresh";
@@ -87,6 +88,10 @@ export async function claimAccount(body: ClaimRequest): Promise<AuthResponse> {
   const auth = await postPublic<AuthResponse>("/api/auth/claim", body);
   storeAuth(auth);
   return auth;
+}
+
+export async function claimStatus(): Promise<ClaimStatusResponse> {
+  return parse<ClaimStatusResponse>(await fetch("/api/auth/claim-status"));
 }
 
 async function tryRefresh(): Promise<boolean> {
