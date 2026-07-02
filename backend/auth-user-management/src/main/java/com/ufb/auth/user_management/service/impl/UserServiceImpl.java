@@ -2,15 +2,18 @@ package com.ufb.auth.user_management.service.impl;
 
 import com.ufb.auth.user_management.dto.AuthResponse;
 import com.ufb.auth.user_management.dto.LoginRequest;
+import com.ufb.auth.user_management.dto.LoginResponse;
 import com.ufb.auth.user_management.dto.RegisterRequest;
 import com.ufb.auth.user_management.dto.ResetPasswordRequest;
 import com.ufb.auth.user_management.dto.UserResponse;
+import com.ufb.auth.user_management.dto.VerifyTwoFactorRequest;
 import com.ufb.auth.user_management.exception.AccountDisabledException;
 import com.ufb.auth.user_management.exception.EmailAlreadyExistsException;
 import com.ufb.auth.user_management.exception.EmailNotRegisteredException;
 import com.ufb.auth.user_management.exception.EmailNotVerifiedException;
 import com.ufb.auth.user_management.exception.InvalidEmailDomainException;
 import com.ufb.auth.user_management.exception.InvalidPasswordException;
+import com.ufb.auth.user_management.exception.InvalidTwoFactorCodeException;
 import com.ufb.auth.user_management.exception.InvalidVerificationException;
 import com.ufb.auth.user_management.dto.ClaimAccountRequest;
 import com.ufb.auth.user_management.dto.CreateAdminRequest;
@@ -26,6 +29,8 @@ import com.ufb.auth.user_management.security.AccountVerificationNotifier;
 import com.ufb.auth.user_management.security.OneTimeTokens;
 import com.ufb.auth.user_management.security.PasswordResetNotifier;
 import com.ufb.auth.user_management.security.TokenHasher;
+import com.ufb.auth.user_management.security.TwoFactorCodeNotifier;
+import com.ufb.auth.user_management.security.TwoFactorCodes;
 import java.time.Instant;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -51,6 +56,7 @@ public class UserServiceImpl implements UserService {
     private final UserEventPublisher eventPublisher;
     private final PasswordResetNotifier passwordResetNotifier;
     private final AccountVerificationNotifier accountVerificationNotifier;
+    private final TwoFactorCodeNotifier twoFactorCodeNotifier;
     private final EmailDomainValidator emailDomainValidator;
 
     @Value("${ufb.admin.email}")
@@ -61,6 +67,9 @@ public class UserServiceImpl implements UserService {
 
     @Value("${ufb.verification.expiry-hours}")
     private long verificationTokenExpiryHours;
+
+    @Value("${ufb.two-factor.expiry-minutes}")
+    private long twoFactorCodeExpiryMinutes;
 
     @Override
     @Transactional
@@ -93,8 +102,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest request) {
+    @Transactional
+    public LoginResponse login(LoginRequest request) {
         if (!emailDomainValidator.domainAcceptsMail(request.email())) {
             throw new InvalidEmailDomainException();
         }
@@ -115,11 +124,73 @@ public class UserServiceImpl implements UserService {
             throw new EmailNotVerifiedException();
         }
 
-        return new AuthResponse(
+        if (!user.isTwoFactorVerified()) {
+            String rawCode = TwoFactorCodes.generate();
+            Instant expiresAt = Instant.now().plus(twoFactorCodeExpiryMinutes, ChronoUnit.MINUTES);
+
+            user.setTwoFactorCodeHash(TokenHasher.sha256(rawCode));
+            user.setTwoFactorCodeExpiresAt(expiresAt);
+            userRepository.save(user);
+
+            twoFactorCodeNotifier.deliver(user.getEmail(), rawCode, expiresAt);
+            return new LoginResponse(true, null);
+        }
+
+        return new LoginResponse(false, new AuthResponse(
                 jwtService.generateAccessToken(user),
                 jwtService.generateRefreshToken(user),
                 toResponse(user)
+        ));
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse verifyTwoFactor(VerifyTwoFactorRequest request) {
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(InvalidTwoFactorCodeException::new);
+
+        if (user.getTwoFactorCodeHash() == null || user.getTwoFactorCodeExpiresAt() == null) {
+            throw new InvalidTwoFactorCodeException();
+        }
+
+        if (Instant.now().isAfter(user.getTwoFactorCodeExpiresAt())) {
+            throw new InvalidTwoFactorCodeException();
+        }
+
+        String incomingHash = TokenHasher.sha256(request.code());
+        if (!constantTimeEquals(incomingHash, user.getTwoFactorCodeHash())) {
+            throw new InvalidTwoFactorCodeException();
+        }
+
+        user.setTwoFactorVerified(true);
+        user.setTwoFactorCodeHash(null);
+        user.setTwoFactorCodeExpiresAt(null);
+        User saved = userRepository.save(user);
+
+        return new AuthResponse(
+                jwtService.generateAccessToken(saved),
+                jwtService.generateRefreshToken(saved),
+                toResponse(saved)
         );
+    }
+
+    @Override
+    @Transactional
+    public void resendTwoFactor(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (user.isTwoFactorVerified() || !user.isPasswordSet() || !user.isEnabled()) {
+                return;
+            }
+
+            String rawCode = TwoFactorCodes.generate();
+            Instant expiresAt = Instant.now().plus(twoFactorCodeExpiryMinutes, ChronoUnit.MINUTES);
+
+            user.setTwoFactorCodeHash(TokenHasher.sha256(rawCode));
+            user.setTwoFactorCodeExpiresAt(expiresAt);
+            userRepository.save(user);
+
+            twoFactorCodeNotifier.deliver(user.getEmail(), rawCode, expiresAt);
+        });
     }
 
     @Override

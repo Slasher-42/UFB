@@ -6,12 +6,15 @@ import com.ufb.auth.user_management.dto.ClaimStatusResponse;
 import com.ufb.auth.user_management.dto.EmailCheckResponse;
 import com.ufb.auth.user_management.dto.ForgotPasswordRequest;
 import com.ufb.auth.user_management.dto.LoginRequest;
+import com.ufb.auth.user_management.dto.LoginResponse;
 import com.ufb.auth.user_management.dto.RefreshRequest;
 import com.ufb.auth.user_management.dto.RegisterRequest;
+import com.ufb.auth.user_management.dto.ResendTwoFactorRequest;
 import com.ufb.auth.user_management.dto.ResendVerificationRequest;
 import com.ufb.auth.user_management.dto.ResetPasswordRequest;
 import com.ufb.auth.user_management.dto.UserResponse;
 import com.ufb.auth.user_management.dto.VerifyEmailRequest;
+import com.ufb.auth.user_management.dto.VerifyTwoFactorRequest;
 import com.ufb.auth.user_management.service.UserService;
 import com.ufb.auth.user_management.validation.EmailDomainValidator;
 import jakarta.validation.Valid;
@@ -35,8 +38,19 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(userService.login(request));
+    }
+
+    @PostMapping("/verify-2fa")
+    public ResponseEntity<AuthResponse> verifyTwoFactor(@Valid @RequestBody VerifyTwoFactorRequest request) {
+        return ResponseEntity.ok(userService.verifyTwoFactor(request));
+    }
+
+    @PostMapping("/resend-2fa")
+    public ResponseEntity<Map<String, String>> resendTwoFactor(@Valid @RequestBody ResendTwoFactorRequest request) {
+        userService.resendTwoFactor(request.email());
+        return ResponseEntity.ok(Map.of("message", "If that account needs a code, a new one has been sent."));
     }
 
     @PostMapping("/refresh")

@@ -33,6 +33,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/auth/email-check").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/verify-email").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/resend-verification").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/verify-2fa").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/resend-2fa").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

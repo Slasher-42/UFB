@@ -10,29 +10,27 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EmailClaimTokenNotifier implements ClaimTokenNotifier {
+public class EmailTwoFactorCodeNotifier implements TwoFactorCodeNotifier {
 
     private final JavaMailSender mailSender;
 
     @Value("${ufb.mail.from}")
     private String fromAddress;
 
-    @Value("${ufb.frontend.base-url}")
-    private String frontendBaseUrl;
-
-    public EmailClaimTokenNotifier(JavaMailSender mailSender) {
+    public EmailTwoFactorCodeNotifier(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
     @Override
-    public void deliver(String recipientEmail, String rawClaimToken, Instant expiresAt) {
+    public void deliver(String recipientEmail, String rawCode, Instant expiresAt) {
         String html = EmailTemplateBuilder.render(
-                "Claim your admin account",
-                List.of("An admin account has been created for you. Use the one-time token below to set your password."),
-                rawClaimToken,
-                "Claim account",
-                frontendBaseUrl + "/claim",
-                "This token is single-use and expires at " + expiresAt + "."
+                "Confirm it's you",
+                List.of("Enter the code below to finish signing in to your UFB Consulting account.",
+                        "This one-time check only happens on your first login."),
+                rawCode,
+                null,
+                null,
+                "This code expires at " + expiresAt + ". If you didn't try to sign in, you can safely ignore this email."
         );
 
         try {
@@ -40,11 +38,11 @@ public class EmailClaimTokenNotifier implements ClaimTokenNotifier {
             MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
             helper.setFrom(fromAddress);
             helper.setTo(recipientEmail);
-            helper.setSubject("UFB Consulting — Claim your admin account");
+            helper.setSubject("UFB Consulting — Your sign-in code");
             helper.setText(html, true);
             mailSender.send(message);
         } catch (MessagingException e) {
-            throw new IllegalStateException("Failed to send claim token email", e);
+            throw new IllegalStateException("Failed to send 2FA code email", e);
         }
     }
 }

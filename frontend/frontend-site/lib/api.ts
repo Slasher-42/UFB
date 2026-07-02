@@ -20,6 +20,11 @@ export type AuthResponse = {
   user: UserResponse;
 };
 
+export type LoginResponse = {
+  twoFactorRequired: boolean;
+  auth: AuthResponse | null;
+};
+
 export type ApiError = { status: number; message: string; fields?: Record<string, string> };
 export type ClaimStatusResponse = { needsClaim: boolean };
 
@@ -80,10 +85,22 @@ export function registerUser(body: RegisterRequest): Promise<UserResponse> {
   return postPublic<UserResponse>("/api/auth/register", body);
 }
 
-export async function loginUser(body: LoginRequest): Promise<AuthResponse> {
-  const auth = await postPublic<AuthResponse>("/api/auth/login", body);
+export async function loginUser(body: LoginRequest): Promise<LoginResponse> {
+  const result = await postPublic<LoginResponse>("/api/auth/login", body);
+  if (!result.twoFactorRequired && result.auth) {
+    storeAuth(result.auth);
+  }
+  return result;
+}
+
+export async function verifyTwoFactor(email: string, code: string): Promise<AuthResponse> {
+  const auth = await postPublic<AuthResponse>("/api/auth/verify-2fa", { email, code });
   storeAuth(auth);
   return auth;
+}
+
+export function resendTwoFactor(email: string): Promise<{ message: string }> {
+  return postPublic<{ message: string }>("/api/auth/resend-2fa", { email });
 }
 
 export async function claimAccount(body: ClaimRequest): Promise<AuthResponse> {

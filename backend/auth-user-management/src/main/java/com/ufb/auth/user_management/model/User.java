@@ -70,6 +70,22 @@ public class User {
     @Column(name = "verification_token_expires_at")
     private Instant verificationTokenExpiresAt;
 
+    // True once the account owner has completed the one-time 2FA email-code
+    // challenge on their first login. False for every new account; once true,
+    // later logins skip the 2FA code step for good.
+    // DB default is false so adding this column doesn't fail on a table that
+    // already has rows (same reasoning as email_verified above).
+    @Column(name = "two_factor_verified", nullable = false, columnDefinition = "boolean not null default false")
+    private boolean twoFactorVerified;
+
+    // SHA-256 hash of the current 2FA login code; null unless a challenge is in flight
+    @Column(name = "two_factor_code_hash")
+    private String twoFactorCodeHash;
+
+    // When the 2FA login code stops being valid; null unless a challenge is in flight
+    @Column(name = "two_factor_code_expires_at")
+    private Instant twoFactorCodeExpiresAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

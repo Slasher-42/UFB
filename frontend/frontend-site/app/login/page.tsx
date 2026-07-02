@@ -38,7 +38,12 @@ export default function LoginPage() {
     setError(null);
     setResent(false);
     try {
-      const auth = await loginUser(form);
+      const result = await loginUser(form);
+      if (result.twoFactorRequired) {
+        router.push(`/verify-2fa?email=${encodeURIComponent(form.email)}`);
+        return;
+      }
+      const auth = result.auth!;
       setAuth(auth);
       router.replace(auth.user.role === "ADMIN" ? "/admin" : "/portal");
     } catch (err) {

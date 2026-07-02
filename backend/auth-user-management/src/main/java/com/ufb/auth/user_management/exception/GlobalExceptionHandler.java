@@ -51,6 +51,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body(HttpStatus.BAD_REQUEST, ex.getMessage()));
     }
 
+    @ExceptionHandler(InvalidTwoFactorCodeException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidTwoFactorCode(InvalidTwoFactorCodeException ex) {
+        Map<String, Object> b = body(HttpStatus.BAD_REQUEST, ex.getMessage());
+        b.put("fields", Map.of("code", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(b);
+    }
+
     @ExceptionHandler(AccountDisabledException.class)
     public ResponseEntity<Map<String, Object>> handleAccountDisabled(AccountDisabledException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body(HttpStatus.FORBIDDEN, ex.getMessage()));
